@@ -1,1 +1,943 @@
-test
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NCS Support - Naim Cloud Software</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    @keyframes pulse-soft {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(0.98); }
+    }
+    .pulse-glow {
+      animation: pulse-soft 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <header class="bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="bg-gradient-to-tr from-cyan-500 to-indigo-600 text-white p-2.5 rounded-xl shadow-md font-bold text-xl">
+          <i class="fa-solid fa-cloud-bolt animate-pulse"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight flex items-center gap-2">
+            NCS Support
+          </h1>
+          <p class="text-xs text-slate-400">Naim Cloud Software Helpdesk</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="https://spelennaim.netlify.app" target="_blank" class="text-sm bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition font-medium shadow-md">
+          <i class="fa-solid fa-arrow-left mr-2"></i>Naar SpelenNaim Hoofdsite
+        </a>
+        <button id="adminToggleBtn" class="text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg transition font-medium border border-slate-700">
+          <i class="fa-solid fa-lock mr-2"></i>Admin Dashboard
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-8">
+    
+    <!-- Systeem Status Meldingen -->
+    <div id="statusAlert" class="hidden mb-6 p-4 rounded-xl border flex items-center justify-between transition-all shadow-sm">
+      <div class="flex items-center gap-3">
+        <span id="statusIcon" class="text-lg"></span>
+        <p id="statusMessage" class="text-sm font-medium"></p>
+      </div>
+      <button onclick="closeStatusAlert()" class="text-slate-400 hover:text-slate-600">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- CUSTOM DIALOG MODAL (Vervanging voor alert & confirm) -->
+    <div id="customModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all scale-95 duration-200">
+        <div class="flex items-start gap-4">
+          <div id="modalIconContainer" class="w-12 h-12 rounded-full flex items-center justify-center shrink-0">
+            <i id="modalIcon" class="text-xl"></i>
+          </div>
+          <div class="flex-grow">
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Melding</h3>
+            <p id="modalDescription" class="text-sm text-slate-500 mt-2 leading-relaxed"></p>
+          </div>
+        </div>
+        <div id="modalActionContainer" class="mt-6 flex justify-end gap-3">
+          <button id="modalSecondaryBtn" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-xl transition">Annuleren</button>
+          <button id="modalPrimaryBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CLIENT VIEW -->
+    <div id="clientView" class="space-y-8">
+      
+      <!-- Welkomst & FAQ Sectie -->
+      <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Links: FAQ & Info -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h2 class="text-2xl font-bold text-slate-900 mb-2">Waar kunnen we je mee helpen?</h2>
+            <p class="text-slate-500 mb-6">Zoek hieronder in de veelgestelde vragen van NCS of start direct een live chat met ons support team.</p>
+            
+            <!-- Zoekbalk FAQ -->
+            <div class="relative mb-6">
+              <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </span>
+              <input type="text" id="faqSearch" placeholder="Type je vraag of probleem..." class="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            </div>
+
+            <!-- FAQ Accordion -->
+            <div class="space-y-3" id="faqContainer">
+              <!-- FAQs worden hier ingeladen -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Rechts: Live Chat starten & NCS site links -->
+        <div class="space-y-6">
+          <!-- Live Status widget -->
+          <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 text-white rounded-2xl p-6 shadow-lg relative overflow-hidden">
+            <div class="absolute -right-10 -bottom-10 text-white opacity-10 text-9xl">
+              <i class="fa-solid fa-comments"></i>
+            </div>
+            <div class="relative z-10">
+              <div class="inline-flex items-center gap-2 bg-indigo-500/30 px-3 py-1 rounded-full text-xs font-semibold mb-4 border border-indigo-400/20">
+                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+                <span>Support is Live</span>
+              </div>
+              <h3 class="text-xl font-bold mb-2">Direct hulp nodig?</h3>
+              <p class="text-indigo-100 text-sm mb-6">Klik op de knop hieronder en begin meteen een beveiligde chatsessie.</p>
+              <button id="startChatBtn" class="w-full bg-white text-indigo-700 hover:bg-slate-100 font-bold py-3 px-4 rounded-xl transition shadow-md flex items-center justify-center gap-2">
+                <i class="fa-solid fa-comments"></i>
+                <span>Start Live Chat</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Extra info widget -->
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h4 class="font-bold text-slate-900 mb-3"><i class="fa-solid fa-globe mr-2 text-indigo-500"></i>Onze Portal & Websites</h4>
+            <div class="space-y-2.5">
+              <a href="https://spelennaim.netlify.app" target="_blank" class="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition group bg-slate-50/50">
+                <div>
+                  <span class="text-sm font-bold text-slate-800 block">NCS Hoofdsite</span>
+                  <span class="text-[11px] text-slate-500">spelennaim.netlify.app</span>
+                </div>
+                <i class="fa-solid fa-up-right-from-square text-xs text-slate-400 group-hover:text-indigo-600"></i>
+              </a>
+              <div class="p-3 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800 flex gap-2.5">
+                <i class="fa-solid fa-circle-info text-base text-amber-500 mt-0.5 shrink-0"></i>
+                <p>NCS support reageert snel op werkdagen. Bewaar je geopende chat-widget om het antwoord van Naim te zien.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Live Chat Sfeer (Zwevend) -->
+      <section id="chatSection" class="hidden fixed bottom-6 right-6 w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden flex flex-col h-[550px] transition-all">
+        <!-- Chat header -->
+        <div class="bg-indigo-600 text-white p-4 flex justify-between items-center shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <div class="w-10 h-10 rounded-full bg-indigo-500 flex items-center justify-center font-bold border-2 border-indigo-400 text-white shadow-inner">
+                NCS
+              </div>
+              <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>
+            </div>
+            <div>
+              <h4 class="font-bold text-sm leading-tight">NCS Live Support</h4>
+              <p class="text-xs text-indigo-200">Doorlopend chatten met Naim</p>
+            </div>
+          </div>
+          <button id="closeChatBtn" class="p-2 text-indigo-200 hover:text-white rounded-lg hover:bg-indigo-700/50 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+          </button>
+        </div>
+
+        <!-- Chat formulier (voor starten) -->
+        <div id="chatRegisterForm" class="flex-grow p-6 flex flex-col justify-center items-center text-center space-y-4">
+          <div class="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600 text-2xl">
+            <i class="fa-solid fa-headset animate-bounce"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-lg">Start een ticket</h4>
+            <p class="text-slate-500 text-xs mt-1">Vul je naam en e-mailadres in om de chat te openen.</p>
+          </div>
+          <div class="w-full space-y-3 pt-2">
+            <input type="text" id="chatName" placeholder="Jouw Naam" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <input type="email" id="chatEmail" placeholder="Jouw E-mailadres" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <textarea id="chatInitialMsg" placeholder="Waar gaat je vraag of probleem over?" rows="2" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm resize-none"></textarea>
+          </div>
+          <button id="initiateChatBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-md">
+            Start het gesprek <i class="fa-solid fa-chevron-right ml-1"></i>
+          </button>
+        </div>
+
+        <!-- Actieve Chat Area -->
+        <div id="chatActiveArea" class="hidden flex-grow flex flex-col h-full overflow-hidden bg-slate-50">
+          <!-- Berichtenstroom -->
+          <div id="chatMessages" class="flex-grow p-4 overflow-y-auto space-y-3 flex flex-col">
+            <!-- Berichten komen hier -->
+          </div>
+          
+          <!-- Metadata -->
+          <div id="chatMetaInfo" class="px-4 py-1.5 bg-slate-100 text-[11px] text-slate-400 border-t border-slate-200 flex justify-between shrink-0">
+            <span id="ticketIdLabel">Ticket: Laden...</span>
+            <span id="ticketStatusLabel" class="font-semibold uppercase text-indigo-600">Open</span>
+          </div>
+
+          <!-- Invoerbalk -->
+          <form id="chatInputForm" class="p-3 bg-white border-t border-slate-200 flex gap-2 items-center shrink-0">
+            <input type="text" id="chatInputMessage" placeholder="Type je bericht..." class="flex-grow px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" autocomplete="off">
+            <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 w-10 h-10 rounded-xl flex items-center justify-center transition shrink-0 shadow">
+              <i class="fa-solid fa-paper-plane text-sm"></i>
+            </button>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="adminView" class="hidden space-y-6">
+      <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 pb-6 border-b border-slate-100">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-2xl font-bold text-slate-900">Admin Support Dashboard</h2>
+              <span class="bg-indigo-100 text-indigo-800 text-xs px-2.5 py-0.5 rounded-full font-bold">Naim Agent</span>
+            </div>
+            <p class="text-slate-500 text-sm mt-1">Beheer en antwoord op alle actieve NCS supporttickets.</p>
+          </div>
+          <button id="exitAdminBtn" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm px-4 py-2 rounded-xl transition font-medium">
+            <i class="fa-solid fa-right-from-bracket mr-2"></i>Sluit Dashboard
+          </button>
+        </div>
+
+        <!-- Dashboard Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Linkerlijst: Alle open/gesloten tickets -->
+          <div class="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50 flex flex-col h-[550px]">
+            <div class="bg-white p-4 border-b border-slate-200">
+              <h3 class="font-bold text-slate-800 flex items-center justify-between">
+                <span>Inkomende Tickets</span>
+                <span id="ticketCountBadge" class="bg-indigo-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">0</span>
+              </h3>
+            </div>
+            
+            <div id="adminTicketList" class="flex-grow overflow-y-auto divide-y divide-slate-200">
+              <!-- Dynamische lijst met tickets -->
+              <div class="p-8 text-center text-slate-400 text-sm">
+                <i class="fa-solid fa-spinner animate-spin text-2xl text-indigo-500 mb-2"></i>
+                <p>Tickets laden...</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rechter chatbox: Actieve geselecteerde ticket chat -->
+          <div class="lg:col-span-2 border border-slate-200 rounded-2xl overflow-hidden bg-white flex flex-col h-[550px]" id="adminChatContainer">
+            <!-- No active chat placeholder -->
+            <div id="adminChatPlaceholder" class="flex-grow flex flex-col items-center justify-center text-center p-8 text-slate-400 space-y-3">
+              <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 text-3xl">
+                <i class="fa-solid fa-comments"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-700">Selecteer een ticket</h4>
+                <p class="text-sm max-w-xs mx-auto mt-1">Kies een ticket uit het linkerpaneel om de conversatie in real-time te starten.</p>
+              </div>
+            </div>
+
+            <!-- Actief geselecteerd chat venster -->
+            <div id="adminChatActive" class="hidden flex-grow flex flex-col h-full overflow-hidden">
+              <!-- Header met klantinformatie & status beheerders -->
+              <div class="bg-slate-900 text-white p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 id="adminActiveClientName" class="font-bold text-sm">Klant</h4>
+                    <span id="adminActiveClientEmail" class="text-xs text-slate-400">email@adres.nl</span>
+                  </div>
+                  <p class="text-xs text-indigo-400 mt-0.5" id="adminActiveTicketId">Ticket ID: ...</p>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                  <select id="adminStatusSelect" class="bg-slate-850 text-white border border-slate-700 text-xs rounded-lg px-2.5 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="open">Open</option>
+                    <option value="pending">In Behandeling</option>
+                    <option value="closed">Gesloten</option>
+                  </select>
+                  <button id="adminDeleteTicketBtn" class="bg-rose-900/40 hover:bg-rose-800/80 text-rose-200 text-xs px-3 py-1.5 rounded-lg transition" title="Verwijder Ticket">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Berichtenoverzicht -->
+              <div id="adminChatMessages" class="flex-grow p-4 overflow-y-auto space-y-3 bg-slate-50 flex flex-col">
+                <!-- Chatberichten -->
+              </div>
+
+              <!-- Invoerbalk voor admin -->
+              <form id="adminInputForm" class="p-3 bg-white border-t border-slate-200 flex gap-2 items-center">
+                <input type="text" id="adminInputMessage" placeholder="Type je antwoord..." class="flex-grow px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm" autocomplete="off">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white p-2.5 w-10 h-10 rounded-xl flex items-center justify-center transition shrink-0 shadow">
+                  <i class="fa-solid fa-reply text-sm"></i>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Firebase & App Script -->
+  <script type="module">
+    // Firebase Web App Configuration (Geleverd door gebruiker)
+    const firebaseConfig = {
+      apiKey: "AIzaSyBaV2UNsA6pShSfQX62VRG2U-JCSbxn37M",
+      authDomain: "chat-naim.firebaseapp.com",
+      projectId: "chat-naim",
+      storageBucket: "chat-naim.firebasestorage.app",
+      messagingSenderId: "915853360055",
+      appId: "1:915853360055:web:b761481fb575ddb0710632",
+      measurementId: "G-6BFBD7GWF7"
+    };
+
+    // Importeren via betrouwbare JS Module CDN's
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, addDoc, onSnapshot, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Initialiseren
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Bepaal App ID
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ncs-support';
+
+    // State Variables
+    let currentUser = null;
+    let currentTicketId = null; 
+    let activeAdminTicketId = null;
+    let unsubscribeClientMessages = null;
+    let unsubscribeAdminMessages = null;
+    let unsubscribeTicketsList = null;
+
+    // Hardcoded FAQs van NCS (Naim Cloud Software)
+    const faqs = [
+      {
+        q: "Wat is NCS (Naim Cloud Software)?",
+        a: "NCS (Naim Cloud Software) is het overkoepelende cloudplatform dat een scala aan handige mini-games, productiviteits- en interactieve hulpmiddelen aanbiedt. Al onze tools zijn te bereiken via de hoofdsite spelennaim.netlify.app."
+      },
+      {
+        q: "Hoe neem ik contact op met Naim?",
+        a: "Je kunt rechtsonder op deze pagina direct de live chat starten. Vul je naam en e-mailadres in om een ticket te openen. De antwoorden van Naim komen direct live bij je binnen."
+      },
+      {
+        q: "Moet ik betalen voor NCS?",
+        a: "Nee, alle software, utilities en games die onder de vlag van NCS worden gehost, zijn volledig gratis te gebruiken en bevatten geen verborgen kosten."
+      },
+      {
+        q: "Ik ervaar een bug op de website, wat nu?",
+        a: "Start direct een live chat via dit supportportaal en geef door op welk platform of game de bug optrad. We voeren regelmatig direct updates uit om bugs op te lossen."
+      }
+    ];
+
+    // UI Referenties
+    const faqContainer = document.getElementById('faqContainer');
+    const faqSearch = document.getElementById('faqSearch');
+    const adminToggleBtn = document.getElementById('adminToggleBtn');
+    const clientView = document.getElementById('clientView');
+    const adminView = document.getElementById('adminView');
+    const exitAdminBtn = document.getElementById('exitAdminBtn');
+
+    const startChatBtn = document.getElementById('startChatBtn');
+    const closeChatBtn = document.getElementById('closeChatBtn');
+    const chatSection = document.getElementById('chatSection');
+    const chatRegisterForm = document.getElementById('chatRegisterForm');
+    const chatActiveArea = document.getElementById('chatActiveArea');
+    const chatMessages = document.getElementById('chatMessages');
+    const chatInputForm = document.getElementById('chatInputForm');
+    const chatInputMessage = document.getElementById('chatInputMessage');
+
+    const adminTicketList = document.getElementById('adminTicketList');
+    const adminChatPlaceholder = document.getElementById('adminChatPlaceholder');
+    const adminChatActive = document.getElementById('adminChatActive');
+    const adminActiveClientName = document.getElementById('adminActiveClientName');
+    const adminActiveClientEmail = document.getElementById('adminActiveClientEmail');
+    const adminActiveTicketId = document.getElementById('adminActiveTicketId');
+    const adminChatMessages = document.getElementById('adminChatMessages');
+    const adminInputForm = document.getElementById('adminInputForm');
+    const adminInputMessage = document.getElementById('adminInputMessage');
+    const adminStatusSelect = document.getElementById('adminStatusSelect');
+    const adminDeleteTicketBtn = document.getElementById('adminDeleteTicketBtn');
+    const ticketCountBadge = document.getElementById('ticketCountBadge');
+
+    // Custom Modal System
+    function showModal(title, description, isConfirm = false, onConfirm = null, onCancel = null) {
+      const modal = document.getElementById('customModal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalDesc = document.getElementById('modalDescription');
+      const iconContainer = document.getElementById('modalIconContainer');
+      const icon = document.getElementById('modalIcon');
+      const primaryBtn = document.getElementById('modalPrimaryBtn');
+      const secondaryBtn = document.getElementById('modalSecondaryBtn');
+
+      modalTitle.innerText = title;
+      modalDesc.innerText = description;
+
+      if (isConfirm) {
+        iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-amber-50 text-amber-600";
+        icon.className = "fa-solid fa-circle-question";
+        secondaryBtn.classList.remove('hidden');
+        primaryBtn.className = "px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold rounded-xl transition shadow";
+        primaryBtn.innerText = "Ja, Bevestig";
+      } else {
+        iconContainer.className = "w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-indigo-50 text-indigo-600";
+        icon.className = "fa-solid fa-circle-info";
+        secondaryBtn.classList.add('hidden');
+        primaryBtn.className = "px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl transition shadow";
+        primaryBtn.innerText = "OK";
+      }
+
+      modal.classList.remove('hidden');
+
+      primaryBtn.onclick = () => {
+        modal.classList.add('hidden');
+        if (onConfirm) onConfirm();
+      };
+
+      secondaryBtn.onclick = () => {
+        modal.classList.add('hidden');
+        if (onCancel) onCancel();
+      };
+    }
+
+    // AUTH STATE LISTENER (Luistert continu naar authenticatiewijzigingen)
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUser = user;
+        showStatus('Verbonden met NCS Cloud Database', 'success');
+        initializeAppFeatures();
+      } else {
+        currentUser = null;
+        showStatus('Niet verbonden. Bezig met aanmelden...', 'warning');
+      }
+    });
+
+    // INITIALISATIE & AUTHENTICATIE
+    window.addEventListener('DOMContentLoaded', async () => {
+      renderFAQs();
+      showStatus('Systeem maakt beveiligde verbinding...', 'info');
+
+      // Veilig inloggen proberen met fallbacks om mismatches te voorkomen
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          try {
+            // Probeer eerst met het meegegeven custom token
+            await signInWithCustomToken(auth, __initial_auth_token);
+          } catch (tokenError) {
+            // Als het custom token niet matcht met jouw Firebase project, loggen we anoniem in
+            console.warn("Custom token mismatch of fout. Schakelt over naar anoniem inloggen...", tokenError);
+            await signInAnonymously(auth);
+          }
+        } else {
+          // Geen custom token aanwezig? Dan direct anoniem aanmelden
+          await signInAnonymously(auth);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        showStatus('Fout bij authenticatie. Zorg dat "Anonieme authenticatie" is ingeschakeld in de Firebase Console.', 'error');
+      }
+    });
+
+    // Start na succesvolle auth
+    function initializeAppFeatures() {
+      const savedTicket = sessionStorage.getItem('active_support_ticket_id');
+      if (savedTicket) {
+        setupActiveClientChat(savedTicket);
+      }
+    }
+
+    // --- FAQ RENDER LOGICA ---
+    function renderFAQs(searchTerm = '') {
+      faqContainer.innerHTML = '';
+      const filteredFaqs = faqs.filter(faq => 
+        faq.q.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        faq.a.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      if (filteredFaqs.length === 0) {
+        faqContainer.innerHTML = `<p class="text-slate-400 text-sm py-4 text-center">Geen antwoorden gevonden voor "${searchTerm}".</p>`;
+        return;
+      }
+
+      filteredFaqs.forEach((faq, index) => {
+        const item = document.createElement('div');
+        item.className = "border border-slate-150 rounded-xl bg-slate-50/50 overflow-hidden transition";
+        item.innerHTML = `
+          <button class="w-full px-5 py-4 text-left font-bold text-slate-800 hover:bg-slate-100/50 flex justify-between items-center transition" onclick="toggleFaq(${index})">
+            <span>${faq.q}</span>
+            <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200" id="faq-icon-${index}"></i>
+          </button>
+          <div class="hidden px-5 pb-4 pt-1 text-slate-600 text-sm leading-relaxed border-t border-slate-150 bg-white" id="faq-content-${index}">
+            ${faq.a}
+          </div>
+        `;
+        faqContainer.appendChild(item);
+      });
+    }
+
+    window.toggleFaq = function(index) {
+      const content = document.getElementById(`faq-content-${index}`);
+      const icon = document.getElementById(`faq-icon-${index}`);
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        icon.classList.add('rotate-180');
+      } else {
+        content.classList.add('hidden');
+        icon.classList.remove('rotate-180');
+      }
+    };
+
+    faqSearch.addEventListener('input', (e) => {
+      renderFAQs(e.target.value);
+    });
+
+    // --- CHAT INTERACTIE (CLIENT) ---
+    startChatBtn.addEventListener('click', () => {
+      chatSection.classList.remove('hidden');
+    });
+
+    closeChatBtn.addEventListener('click', () => {
+      chatSection.classList.add('hidden');
+    });
+
+    // Start een nieuw ticket
+    document.getElementById('initiateChatBtn').addEventListener('click', async () => {
+      if (!currentUser) {
+        showStatus('Je bent nog niet verbonden. Controleer je Firebase Anonymous Auth instellingen.', 'error');
+        return;
+      }
+
+      const name = document.getElementById('chatName').value.trim();
+      const email = document.getElementById('chatEmail').value.trim();
+      const initialMsg = document.getElementById('chatInitialMsg').value.trim();
+
+      if (!name || !email || !initialMsg) {
+        showModal('Gegevens incompleet', 'Vul alstublieft alle invoervelden in om je ticketsessie te kunnen starten.');
+        return;
+      }
+
+      try {
+        const ticketsCol = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+        const newTicketDoc = doc(ticketsCol);
+        const ticketId = newTicketDoc.id;
+
+        const ticketData = {
+          id: ticketId,
+          clientUid: currentUser.uid,
+          clientName: name,
+          clientEmail: email,
+          status: 'open',
+          createdAt: Date.now(),
+          lastActive: Date.now()
+        };
+
+        await setDoc(newTicketDoc, ticketData);
+
+        const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+        const newMsgDoc = doc(messagesCol);
+        
+        await setDoc(newMsgDoc, {
+          id: newMsgDoc.id,
+          ticketId: ticketId,
+          senderId: currentUser.uid,
+          senderName: name,
+          message: initialMsg,
+          timestamp: Date.now(),
+          isAdmin: false
+        });
+
+        sessionStorage.setItem('active_support_ticket_id', ticketId);
+        setupActiveClientChat(ticketId);
+
+      } catch (error) {
+        console.error("Fout bij ticket aanmaken:", error);
+        showStatus('Kan chat niet openen. Controleer je Firestore Database Rules.', 'error');
+      }
+    });
+
+    // Live ticket & bericht synchronisatie client-zijde
+    function setupActiveClientChat(ticketId) {
+      if (!currentUser) return;
+      currentTicketId = ticketId;
+      chatRegisterForm.classList.add('hidden');
+      chatActiveArea.classList.remove('hidden');
+      document.getElementById('ticketIdLabel').innerText = `Ticket: #${ticketId.substring(0, 8)}`;
+
+      const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+      
+      if (unsubscribeClientMessages) unsubscribeClientMessages();
+
+      unsubscribeClientMessages = onSnapshot(messagesCol, (snapshot) => {
+        const messages = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.ticketId === ticketId) {
+            messages.push(data);
+          }
+        });
+
+        messages.sort((a, b) => a.timestamp - b.timestamp);
+        renderClientMessages(messages);
+      }, (error) => {
+        console.error("Berichten-sync fout client:", error);
+      });
+
+      const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticketId);
+      onSnapshot(ticketRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const ticket = docSnap.data();
+          const statusEl = document.getElementById('ticketStatusLabel');
+          statusEl.innerText = ticket.status;
+          
+          if (ticket.status === 'closed') {
+            statusEl.className = "font-semibold uppercase text-rose-500 bg-rose-50 px-2 py-0.5 rounded";
+            chatInputMessage.disabled = true;
+            chatInputMessage.placeholder = "Dit ticket is gesloten door support.";
+          } else {
+            statusEl.className = "font-semibold uppercase text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded";
+            chatInputMessage.disabled = false;
+            chatInputMessage.placeholder = "Type je bericht...";
+          }
+        }
+      }, (error) => {
+        console.error("Ticket data error:", error);
+      });
+    }
+
+    function renderClientMessages(messages) {
+      chatMessages.innerHTML = '';
+      if (messages.length === 0) {
+        chatMessages.innerHTML = '<p class="text-center text-slate-400 text-xs py-4">Nog geen berichten...</p>';
+        return;
+      }
+
+      messages.forEach(msg => {
+        const isMe = msg.senderId === currentUser.uid;
+        const msgDiv = document.createElement('div');
+        
+        if (isMe) {
+          msgDiv.className = "self-end bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[85%] text-sm shadow-sm";
+          msgDiv.innerHTML = `<p class="break-words">${escapeHTML(msg.message)}</p>`;
+        } else {
+          msgDiv.className = "self-start bg-white text-slate-800 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-[85%] text-sm shadow-sm border border-slate-200";
+          msgDiv.innerHTML = `
+            <span class="text-[10px] text-indigo-600 font-bold block mb-1">${escapeHTML(msg.senderName)} (Support)</span>
+            <p class="break-words">${escapeHTML(msg.message)}</p>
+          `;
+        }
+        chatMessages.appendChild(msgDiv);
+      });
+
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Client verzendt bericht
+    chatInputForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msgText = chatInputMessage.value.trim();
+      if (!msgText || !currentTicketId || !currentUser) return;
+
+      try {
+        const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+        const newMsgDoc = doc(messagesCol);
+        
+        await setDoc(newMsgDoc, {
+          id: newMsgDoc.id,
+          ticketId: currentTicketId,
+          senderId: currentUser.uid,
+          senderName: document.getElementById('chatName').value || "Klant",
+          message: msgText,
+          timestamp: Date.now(),
+          isAdmin: false
+        });
+
+        const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', currentTicketId);
+        await updateDoc(ticketRef, {
+          lastActive: Date.now()
+        });
+
+        chatInputMessage.value = '';
+      } catch (error) {
+        console.error("Fout bij bericht verzenden client:", error);
+      }
+    });
+
+    // --- ADMIN DASHBOARD LOGICA ---
+    adminToggleBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        showModal('Niet verbonden', 'Wacht tot de databaseverbinding actief is.');
+        return;
+      }
+      clientView.classList.add('hidden');
+      adminView.classList.remove('hidden');
+      loadAdminTickets();
+    });
+
+    exitAdminBtn.addEventListener('click', () => {
+      adminView.classList.add('hidden');
+      clientView.classList.remove('hidden');
+    });
+
+    function loadAdminTickets() {
+      if (!currentUser) return;
+      const ticketsCol = collection(db, 'artifacts', appId, 'public', 'data', 'tickets');
+      
+      if (unsubscribeTicketsList) unsubscribeTicketsList();
+
+      unsubscribeTicketsList = onSnapshot(ticketsCol, (snapshot) => {
+        const tickets = [];
+        snapshot.forEach((doc) => {
+          tickets.push(doc.data());
+        });
+
+        tickets.sort((a, b) => b.lastActive - a.lastActive);
+        renderAdminTicketsList(tickets);
+      }, (error) => {
+        console.error("Tickets synchronisatiefout admin:", error);
+      });
+    }
+
+    function renderAdminTicketsList(tickets) {
+      adminTicketList.innerHTML = '';
+      ticketCountBadge.innerText = tickets.length;
+
+      if (tickets.length === 0) {
+        adminTicketList.innerHTML = `
+          <div class="p-8 text-center text-slate-400 text-sm">
+            <i class="fa-solid fa-folder-open text-3xl text-slate-300 mb-2 block"></i>
+            Geen tickets gevonden.
+          </div>
+        `;
+        return;
+      }
+
+      tickets.forEach(ticket => {
+        const ticketBtn = document.createElement('button');
+        const isActive = activeAdminTicketId === ticket.id;
+        ticketBtn.className = `w-full text-left p-4 hover:bg-slate-100 transition flex flex-col gap-1 border-b border-slate-200 ${isActive ? 'bg-indigo-50 border-r-4 border-r-indigo-600' : ''}`;
+        
+        let statusBadge = '';
+        if (ticket.status === 'open') {
+          statusBadge = '<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">OPEN</span>';
+        } else if (ticket.status === 'pending') {
+          statusBadge = '<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">BEHANDELING</span>';
+        } else {
+          statusBadge = '<span class="bg-slate-200 text-slate-700 text-[10px] font-bold px-2 py-0.5 rounded">GESLOTEN</span>';
+        }
+
+        ticketBtn.innerHTML = `
+          <div class="flex justify-between items-start w-full gap-2">
+            <span class="font-bold text-sm text-slate-800 truncate max-w-[140px]">${escapeHTML(ticket.clientName)}</span>
+            ${statusBadge}
+          </div>
+          <span class="text-xs text-slate-500 truncate w-full">${escapeHTML(ticket.clientEmail)}</span>
+          <span class="text-[10px] text-slate-400 mt-1 block">Ticket: #${ticket.id.substring(0, 8)}</span>
+        `;
+
+        ticketBtn.addEventListener('click', () => selectAdminTicket(ticket));
+        adminTicketList.appendChild(ticketBtn);
+      });
+    }
+
+    function selectAdminTicket(ticket) {
+      activeAdminTicketId = ticket.id;
+      adminChatPlaceholder.classList.add('hidden');
+      adminChatActive.classList.remove('hidden');
+
+      loadAdminTickets();
+
+      adminActiveClientName.innerText = ticket.clientName;
+      adminActiveClientEmail.innerText = ticket.clientEmail;
+      adminActiveTicketId.innerText = `Ticket ID: #${ticket.id.substring(0, 12)}`;
+      adminStatusSelect.value = ticket.status;
+
+      const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+      
+      if (unsubscribeAdminMessages) unsubscribeAdminMessages();
+
+      unsubscribeAdminMessages = onSnapshot(messagesCol, (snapshot) => {
+        const messages = [];
+        snapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.ticketId === ticket.id) {
+            messages.push(data);
+          }
+        });
+
+        messages.sort((a, b) => a.timestamp - b.timestamp);
+        renderAdminChatMessages(messages);
+      }, (error) => {
+        console.error("Laden van admin chat mislukt:", error);
+      });
+
+      adminStatusSelect.onchange = async () => {
+        if (!currentUser) return;
+        try {
+          const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id);
+          await updateDoc(ticketRef, { status: adminStatusSelect.value });
+        } catch (error) {
+          console.error("Status update error:", error);
+        }
+      };
+
+      adminDeleteTicketBtn.onclick = () => {
+        showModal(
+          'Ticket Verwijderen',
+          'Weet je zeker dat je dit ticket permanent wilt verwijderen?',
+          true,
+          async () => {
+            try {
+              const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', ticket.id);
+              await deleteDoc(ticketRef);
+              
+              adminChatActive.classList.add('hidden');
+              adminChatPlaceholder.classList.remove('hidden');
+              activeAdminTicketId = null;
+              loadAdminTickets();
+            } catch (error) {
+              console.error("Fout bij verwijderen ticket:", error);
+            }
+          }
+        );
+      };
+    }
+
+    function renderAdminChatMessages(messages) {
+      adminChatMessages.innerHTML = '';
+      messages.forEach(msg => {
+        const isClient = msg.senderId !== currentUser.uid;
+        const msgDiv = document.createElement('div');
+
+        if (isClient) {
+          msgDiv.className = "self-start bg-white text-slate-800 rounded-2xl rounded-tl-none px-4 py-2.5 max-w-[85%] text-sm shadow-sm border border-slate-200";
+          msgDiv.innerHTML = `
+            <span class="text-[10px] text-indigo-700 font-bold block mb-1">${escapeHTML(msg.senderName)} (Klant)</span>
+            <p class="break-words">${escapeHTML(msg.message)}</p>
+          `;
+        } else {
+          msgDiv.className = "self-end bg-slate-900 text-white rounded-2xl rounded-tr-none px-4 py-2.5 max-w-[85%] text-sm shadow-sm border border-slate-850";
+          msgDiv.innerHTML = `<p class="break-words">${escapeHTML(msg.message)}</p>`;
+        }
+        adminChatMessages.appendChild(msgDiv);
+      });
+
+      adminChatMessages.scrollTop = adminChatMessages.scrollHeight;
+    }
+
+    adminInputForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const msgText = adminInputMessage.value.trim();
+      if (!msgText || !activeAdminTicketId || !currentUser) return;
+
+      try {
+        const messagesCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+        const newMsgDoc = doc(messagesCol);
+        
+        await setDoc(newMsgDoc, {
+          id: newMsgDoc.id,
+          ticketId: activeAdminTicketId,
+          senderId: currentUser.uid,
+          senderName: "NCS Support",
+          message: msgText,
+          timestamp: Date.now(),
+          isAdmin: true
+        });
+
+        const ticketRef = doc(db, 'artifacts', appId, 'public', 'data', 'tickets', activeAdminTicketId);
+        await updateDoc(ticketRef, {
+          lastActive: Date.now()
+        });
+
+        adminInputMessage.value = '';
+      } catch (error) {
+        console.error("Fout bij reactie verzenden admin:", error);
+      }
+    });
+
+    // --- ALGEMENE SYSTEM HULPFUNCTIES ---
+    function showStatus(msg, type = 'info') {
+      const alertDiv = document.getElementById('statusAlert');
+      const icon = document.getElementById('statusIcon');
+      const message = document.getElementById('statusMessage');
+
+      alertDiv.className = "mb-6 p-4 rounded-xl border flex items-center justify-between transition-all shadow-sm ";
+      
+      if (type === 'success') {
+        alertDiv.classList.add('bg-emerald-50', 'border-emerald-200', 'text-emerald-800');
+        icon.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-500"></i>';
+      } else if (type === 'error') {
+        alertDiv.classList.add('bg-rose-50', 'border-rose-200', 'text-rose-800');
+        icon.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-rose-500"></i>';
+      } else if (type === 'warning') {
+        alertDiv.classList.add('bg-amber-50', 'border-amber-200', 'text-amber-800');
+        icon.innerHTML = '<i class="fa-solid fa-circle-exclamation text-amber-500"></i>';
+      } else {
+        alertDiv.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-800');
+        icon.innerHTML = '<i class="fa-solid fa-circle-info text-blue-500"></i>';
+      }
+
+      message.innerText = msg;
+      alertDiv.classList.remove('hidden');
+
+      if (type === 'success' || type === 'info') {
+        setTimeout(() => {
+          closeStatusAlert();
+        }, 5000);
+      }
+    }
+
+    window.closeStatusAlert = function() {
+      document.getElementById('statusAlert').classList.add('hidden');
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag] || tag)
+      );
+    }
+  </script>
+</body>
+</html>
